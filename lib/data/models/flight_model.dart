@@ -49,3 +49,33 @@ class FlightOption {
     required this.travelClass,
   });
 }
+
+class FlightSelection {
+  final FlightSearchCriteria criteria;
+  final FlightOption flight;
+
+  const FlightSelection({
+    required this.criteria,
+    required this.flight,
+  });
+}
+
+class FlightBookingData {
+  final FlightSelection selection;
+  final String passengerName;
+  final String passengerPhone;
+  final String passengerEmail;
+  final String confirmationNumber;
+  final DateTime bookedAt;
+  final double totalPriceSar;
+
+  const FlightBookingData({
+    required this.selection,
+    required this.passengerName,
+    required this.passengerPhone,
+    required this.passengerEmail,
+    required this.confirmationNumber,
+    required this.bookedAt,
+    required this.totalPriceSar,
+  });
+}

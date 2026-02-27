@@ -7,13 +7,18 @@ import '../data/models/user_role.dart';
 
 class AdminGuard extends StatelessWidget {
   final Widget child;
+  final Set<UserRole> allowedRoles;
 
-  const AdminGuard({super.key, required this.child});
+  const AdminGuard({
+    super.key,
+    required this.child,
+    this.allowedRoles = const {UserRole.admin},
+  });
 
   @override
   Widget build(BuildContext context) {
     final role = context.watch<AuthService>().role;
-    if (role == UserRole.admin) {
+    if (allowedRoles.contains(role)) {
       return child;
     }
     return Scaffold(

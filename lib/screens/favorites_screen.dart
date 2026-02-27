@@ -39,18 +39,18 @@ class FavoritesScreen extends StatelessWidget {
             : ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: favorites.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final item = favorites[index];
                   return Dismissible(
                     key: ValueKey(item.id),
                     direction: DismissDirection.endToStart,
-                    onDismissed: (_) => _remove(context, item),
+                    onDismissed: (direction) => _remove(context, item),
                     background: Container(
                       alignment: Alignment.centerRight,
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       decoration: BoxDecoration(
-                        color: Colors.redAccent.withOpacity(0.2),
+                        color: Colors.redAccent.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Icon(Icons.delete_outline, color: Colors.redAccent),
@@ -80,8 +80,10 @@ class FavoritesScreen extends StatelessWidget {
                                   width: 90,
                                   height: 80,
                                   fit: BoxFit.cover,
-                                  placeholder: (_, __) => Container(color: Colors.white10),
-                                  errorWidget: (_, __, ___) => const Icon(Icons.broken_image_outlined),
+                                  placeholder: (context, url) =>
+                                      Container(color: Colors.white10),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.broken_image_outlined),
                                 ),
                               ),
                               const SizedBox(width: 12),

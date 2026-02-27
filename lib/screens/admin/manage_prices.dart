@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../auth/auth_service.dart';
 import '../../data/models/admin_price.dart';
 import '../../logic/admin_data_state.dart';
+import '../../services/audit_log_service.dart';
 import '../../widgets/branded_app_bar.dart';
 import '../../widgets/responsive_container.dart';
 
@@ -19,6 +21,14 @@ class _ManagePricesScreenState extends State<ManagePricesScreen> {
 
   void _toggle(AdminPrice price, bool value) {
     context.read<AdminDataState>().updatePrice(price.id, price.copyWith(enabled: value));
+    final actor = context.read<AuthService>().username ?? 'غير معروف';
+    context.read<AuditLogService>().log(
+          actor: actor,
+          action: 'تغيير حالة سعر',
+          targetType: 'price',
+          targetId: price.id,
+          details: value ? 'تفعيل' : 'إيقاف',
+        );
   }
 
   Future<void> _openDialog({AdminPrice? existing}) async {
@@ -65,10 +75,26 @@ class _ManagePricesScreenState extends State<ManagePricesScreen> {
                         enabled: true,
                       ),
                     );
+                final actor = context.read<AuthService>().username ?? 'غير معروف';
+                context.read<AuditLogService>().log(
+                      actor: actor,
+                      action: 'إضافة سعر',
+                      targetType: 'price',
+                      targetId: title,
+                      details: 'سعر جديد',
+                    );
               } else {
                 context.read<AdminDataState>().updatePrice(
                       existing.id,
                       existing.copyWith(title: title, valueSar: value),
+                    );
+                final actor = context.read<AuthService>().username ?? 'غير معروف';
+                context.read<AuditLogService>().log(
+                      actor: actor,
+                      action: 'تعديل سعر',
+                      targetType: 'price',
+                      targetId: existing.id,
+                      details: 'تحديث بيانات السعر',
                     );
               }
               Navigator.of(context).pop();
@@ -94,7 +120,7 @@ class _ManagePricesScreenState extends State<ManagePricesScreen> {
         child: ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: prices.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final price = prices[index];
             return Card(

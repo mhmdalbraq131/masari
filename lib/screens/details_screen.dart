@@ -76,7 +76,16 @@ class _DetailsScreenState extends State<DetailsScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/booking'),
+        onPressed: () {
+          if (!auth.isLoggedIn) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('يرجى تسجيل الدخول لإتمام الحجز')),
+            );
+            context.go('/login');
+            return;
+          }
+          context.push('/booking');
+        },
         icon: const Icon(Icons.calendar_month_outlined),
         label: Text('احجز الآن • ${trip.priceLabel}'),
       ),
@@ -154,8 +163,9 @@ class _GallerySlider extends StatelessWidget {
                   child: CachedNetworkImage(
                     imageUrl: image,
                     fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(color: Colors.white10),
-                    errorWidget: (_, __, ___) => const Icon(Icons.broken_image_outlined),
+                    placeholder: (context, url) => Container(color: Colors.white10),
+                    errorWidget: (context, url, error) =>
+                        const Icon(Icons.broken_image_outlined),
                   ),
                 ),
               );
@@ -175,7 +185,7 @@ class _GallerySlider extends StatelessWidget {
               decoration: BoxDecoration(
                 color: currentIndex == index
                     ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    : Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
             ),

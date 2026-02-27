@@ -63,6 +63,7 @@ class _BusPassengerScreenState extends State<BusPassengerScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('خطأ في تحميل الصورة: $e'),
@@ -124,6 +125,7 @@ class _BusPassengerScreenState extends State<BusPassengerScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('خطأ: $e'),
@@ -154,7 +156,7 @@ class _BusPassengerScreenState extends State<BusPassengerScreen> {
                     Icon(
                       Icons.directions_bus_filled_outlined,
                       size: 48,
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
                     const Text('لم يتم اختيار أي رحلة'),
@@ -176,7 +178,7 @@ class _BusPassengerScreenState extends State<BusPassengerScreen> {
                   children: [
                     // Trip Summary Card
                     Card(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(
@@ -300,7 +302,7 @@ class _BusPassengerScreenState extends State<BusPassengerScreen> {
 
                           // Reason for Travel
                           DropdownButtonFormField<String>(
-                            value: _reasonForTravel,
+                            initialValue: _reasonForTravel,
                             decoration: InputDecoration(
                               labelText: 'سبب السفر',
                               prefixIcon: const Icon(Icons.info),
@@ -330,7 +332,7 @@ class _BusPassengerScreenState extends State<BusPassengerScreen> {
 
                           // Visa Type
                           DropdownButtonFormField<String>(
-                            value: _visaType,
+                            initialValue: _visaType,
                             decoration: InputDecoration(
                               labelText: 'نوع التأشيرة',
                               prefixIcon: const Icon(Icons.assignment),
@@ -421,7 +423,7 @@ class _BusPassengerScreenState extends State<BusPassengerScreen> {
                                             color: Theme.of(context)
                                                 .colorScheme
                                                 .primary
-                                                .withOpacity(0.3),
+                                              .withValues(alpha: 0.3),
                                             style: BorderStyle.solid,
                                             width: 2,
                                           ),
@@ -438,7 +440,7 @@ class _BusPassengerScreenState extends State<BusPassengerScreen> {
                                               color: Theme.of(context)
                                                   .colorScheme
                                                   .primary
-                                                  .withOpacity(0.5),
+                                                  .withValues(alpha: 0.5),
                                             ),
                                             const SizedBox(height: 12),
                                             Text(

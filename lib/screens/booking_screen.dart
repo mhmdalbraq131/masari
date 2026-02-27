@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/utils/input_sanitizer.dart';
 import '../data/models/booked_trip_model.dart';
 import '../logic/mytrips_service.dart';
+import '../services/security_service.dart';
 import '../widgets/branded_app_bar.dart';
 import '../widgets/responsive_container.dart';
 
@@ -60,6 +61,30 @@ class _BookingScreenState extends State<BookingScreen> {
     return true;
   }
 
+  Future<bool> _verifySecurityBeforeConfirm() async {
+    final security = context.read<SecurityService>();
+    final hasPin = await security.isPinSet();
+    if (!hasPin) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى إعداد رمز PIN أولاً')),
+      );
+      context.go('/settings');
+      return false;
+    }
+    if (security.biometricsEnabled) {
+      final biometricOk = await security.authenticateBiometric();
+      if (biometricOk) return true;
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر التحقق بالبصمة، الرجاء إدخال PIN')),
+      );
+    }
+    if (!mounted) return false;
+    final verified = await context.push<bool>('/pin-verify');
+    return verified == true;
+  }
+
   Future<void> _confirmBooking() async {
     setState(() => _loading = true);
     await Future.delayed(const Duration(milliseconds: 900));
@@ -99,6 +124,8 @@ class _BookingScreenState extends State<BookingScreen> {
                   : () async {
                       if (!_validateCurrentStep()) return;
                       if (_currentStep == 3) {
+                        final verified = await _verifySecurityBeforeConfirm();
+                        if (!verified) return;
                         await _confirmBooking();
                         return;
                       }

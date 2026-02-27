@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../auth/auth_service.dart';
 import '../../data/models/admin_trip.dart';
 import '../../logic/admin_data_state.dart';
+import '../../services/audit_log_service.dart';
 import '../../widgets/branded_app_bar.dart';
 import '../../widgets/responsive_container.dart';
 
@@ -33,6 +35,14 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
   void _toggleTrip(int index, bool value) {
     final trip = context.read<AdminDataState>().trips[index];
     context.read<AdminDataState>().toggleTrip(trip.id, value);
+    final actor = context.read<AuthService>().username ?? 'غير معروف';
+    context.read<AuditLogService>().log(
+          actor: actor,
+          action: 'تغيير حالة رحلة',
+          targetType: 'trip',
+          targetId: trip.id,
+          details: value ? 'تفعيل' : 'إيقاف',
+        );
   }
 
   Future<void> _openTripDialog({AdminTrip? existing, int? index}) async {
@@ -50,14 +60,14 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
           child: Column(
             children: [
               DropdownButtonFormField<String>(
-                value: fromRegion,
+                initialValue: fromRegion,
                 decoration: const InputDecoration(labelText: 'من'),
                 items: _regions.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
                 onChanged: (value) => fromRegion = value,
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: toRegion,
+                initialValue: toRegion,
                 decoration: const InputDecoration(labelText: 'إلى'),
                 items: _regions.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
                 onChanged: (value) => toRegion = value,
@@ -112,6 +122,14 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                         enabled: true,
                       ),
                     );
+                final actor = context.read<AuthService>().username ?? 'غير معروف';
+                context.read<AuditLogService>().log(
+                      actor: actor,
+                      action: 'إضافة رحلة',
+                      targetType: 'trip',
+                      targetId: '$from-$to-$time',
+                      details: 'رحلة جديدة',
+                    );
               } else {
                 context.read<AdminDataState>().updateTrip(
                       existing!.id,
@@ -122,6 +140,14 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                         priceSar: price,
                         seats: seats,
                       ),
+                    );
+                final actor = context.read<AuthService>().username ?? 'غير معروف';
+                context.read<AuditLogService>().log(
+                      actor: actor,
+                      action: 'تعديل رحلة',
+                      targetType: 'trip',
+                      targetId: existing.id,
+                      details: 'تحديث بيانات الرحلة',
                     );
               }
               Navigator.of(context).pop();
@@ -146,7 +172,7 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
         child: ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: context.watch<AdminDataState>().trips.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final trip = context.watch<AdminDataState>().trips[index];
             return Card(

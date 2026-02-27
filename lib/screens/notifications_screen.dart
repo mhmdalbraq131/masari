@@ -51,7 +51,7 @@ class NotificationsScreen extends StatelessWidget {
             : ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: items.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final item = items[index];
                   return _NotificationCard(
@@ -79,7 +79,9 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = item.isRead ? Colors.white10 : Theme.of(context).colorScheme.primary.withOpacity(0.15);
+    final color = item.isRead
+      ? Colors.white10
+      : Theme.of(context).colorScheme.primary.withValues(alpha: 0.15);
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -94,7 +96,7 @@ class _NotificationCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                 child: Icon(
                   item.isRead ? Icons.notifications_none : Icons.notifications_active,
                   color: Theme.of(context).colorScheme.primary,

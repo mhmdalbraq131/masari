@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/flight_model.dart';
+import '../../logic/location_service.dart';
 import '../../services/flight_service.dart';
 import '../../widgets/branded_app_bar.dart';
 import '../../widgets/responsive_container.dart';
@@ -16,17 +18,6 @@ class FlightSearchScreen extends StatefulWidget {
 
 class _FlightSearchScreenState extends State<FlightSearchScreen> {
   final FlightService _service = FlightService();
-  final List<String> _cities = const [
-    'الرياض',
-    'جدة',
-    'الدمام',
-    'المدينة',
-    'أبها',
-    'القاهرة',
-    'دبي',
-    'الدوحة',
-  ];
-
   String? _fromCity;
   String? _toCity;
   DateTime? _departureDate;
@@ -48,6 +39,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
+    if (!mounted) return;
     if (picked == null) return;
     setState(() {
       if (isReturn) {
@@ -62,16 +54,20 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   }
 
   Future<void> _search() async {
-    if (_fromCity == null || _toCity == null || _departureDate == null) {
+    if (_departureDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('يرجى تعبئة بيانات البحث')),
       );
       return;
     }
+    final fromCity = _fromCity?.trim().isEmpty ?? true
+        ? 'الرياض'
+        : _fromCity!.trim();
+    final toCity = _toCity?.trim().isEmpty ?? true ? 'جدة' : _toCity!.trim();
     setState(() => _loading = true);
     final criteria = FlightSearchCriteria(
-      fromCity: _fromCity!,
-      toCity: _toCity!,
+      fromCity: fromCity,
+      toCity: toCity,
       departureDate: _departureDate!,
       returnDate: _returnDate,
       passengers: _passengers,
@@ -97,17 +93,15 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             children: [
               _SectionTitle(title: 'بيانات الرحلة'),
               const SizedBox(height: 12),
-              _DropdownField(
-                label: 'من',
+              _LocationField(
+                label: 'من (اختياري)',
                 value: _fromCity,
-                items: _cities,
                 onChanged: (value) => setState(() => _fromCity = value),
               ),
               const SizedBox(height: 12),
-              _DropdownField(
-                label: 'إلى',
+              _LocationField(
+                label: 'إلى (اختياري)',
                 value: _toCity,
-                items: _cities,
                 onChanged: (value) => setState(() => _toCity = value),
               ),
               const SizedBox(height: 12),
@@ -170,29 +164,40 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-class _DropdownField extends StatelessWidget {
+class _LocationField extends StatelessWidget {
   final String label;
   final String? value;
-  final List<String> items;
   final ValueChanged<String?> onChanged;
 
-  const _DropdownField({
+  const _LocationField({
     required this.label,
     required this.value,
-    required this.items,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: const Icon(Icons.location_on_outlined),
-      ),
-      items: items.map((city) => DropdownMenuItem(value: city, child: Text(city))).toList(),
-      onChanged: onChanged,
+    final locations = context.watch<LocationService>().locations;
+    final options = locations.map((e) => e.name).toList();
+    return Autocomplete<String>(
+      initialValue: TextEditingValue(text: value ?? ''),
+      optionsBuilder: (text) {
+        final query = text.text.trim();
+        if (query.isEmpty) return options;
+        return options.where((item) => item.contains(query));
+      },
+      onSelected: (selection) => onChanged(selection),
+      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+        return TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          decoration: InputDecoration(
+            labelText: label,
+            prefixIcon: const Icon(Icons.location_on_outlined),
+          ),
+          onChanged: (value) => onChanged(value.trim().isEmpty ? null : value),
+        );
+      },
     );
   }
 }
@@ -282,7 +287,7 @@ class _ClassSelector extends StatelessWidget {
             label: const Text('اقتصادي'),
             selected: value == TravelClass.economy,
             onSelected: (_) => onChanged(TravelClass.economy),
-            selectedColor: AppColors.primary.withOpacity(0.2),
+            selectedColor: AppColors.primary.withValues(alpha: 0.2),
             labelStyle: TextStyle(
               color: value == TravelClass.economy ? AppColors.textPrimary : AppColors.textSecondary,
             ),
@@ -292,7 +297,7 @@ class _ClassSelector extends StatelessWidget {
             label: const Text('رجال أعمال'),
             selected: value == TravelClass.business,
             onSelected: (_) => onChanged(TravelClass.business),
-            selectedColor: AppColors.primary.withOpacity(0.2),
+            selectedColor: AppColors.primary.withValues(alpha: 0.2),
             labelStyle: TextStyle(
               color: value == TravelClass.business ? AppColors.textPrimary : AppColors.textSecondary,
             ),

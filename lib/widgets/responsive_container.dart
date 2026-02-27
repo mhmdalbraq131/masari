@@ -38,7 +38,7 @@ class ResponsiveContainer extends StatelessWidget {
                     width: 260,
                     fit: BoxFit.contain,
                     color: AppColors.textPrimary,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
                   ),
                 ),
               ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../l10n/app_localizations.dart';
 
 class BottomNav extends StatelessWidget {
   final int currentIndex;
@@ -13,13 +15,33 @@ class BottomNav extends StatelessWidget {
     this.badges = const {},
   });
 
-  static const List<_BottomNavItem> _items = [
-    _BottomNavItem(label: 'الرئيسية', icon: Icons.home, route: '/home'),
-    _BottomNavItem(label: 'الطيران', icon: Icons.flight, route: '/flights'),
-    _BottomNavItem(label: 'الفنادق', icon: Icons.hotel, route: '/hotels'),
-    _BottomNavItem(label: 'الباصات', icon: Icons.directions_bus, route: '/bus-companies'),
-    _BottomNavItem(label: 'المفضلة', icon: Icons.favorite, route: '/favorites'),
-  ];
+  List<_BottomNavItem> _items(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    return [
+      _BottomNavItem(label: t.navHome, icon: Icons.home, route: '/home'),
+      _BottomNavItem(
+        label: t.navFlights,
+        icon: Icons.flight,
+        route: '/flights',
+      ),
+      _BottomNavItem(label: t.navHotels, icon: Icons.hotel, route: '/hotels'),
+      _BottomNavItem(
+        label: t.navBuses,
+        icon: Icons.directions_bus,
+        route: '/bus-companies',
+      ),
+      _BottomNavItem(
+        label: t.navFavorites,
+        icon: Icons.favorite,
+        route: '/favorites',
+      ),
+      _BottomNavItem(
+        label: t.navProfile,
+        icon: Icons.person_outline,
+        route: '/profile',
+      ),
+    ];
+  }
 
   void _handleTap(BuildContext context, int index) {
     if (index == currentIndex) return;
@@ -27,16 +49,26 @@ class BottomNav extends StatelessWidget {
       onTap!(index);
       return;
     }
-    context.go(_items[index].route);
+    context.go(_items(context)[index].route);
   }
 
   @override
   Widget build(BuildContext context) {
-    return _AdvancedBottomNavBar(
-      items: _items,
+    final items = _items(context);
+    return BottomNavigationBar(
       currentIndex: currentIndex,
       onTap: (index) => _handleTap(context, index),
-      badges: badges,
+      type: BottomNavigationBarType.fixed,
+      showSelectedLabels: true,
+      showUnselectedLabels: true,
+      items: items
+          .map(
+            (item) => BottomNavigationBarItem(
+              icon: Icon(item.icon),
+              label: item.label,
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -46,158 +78,72 @@ class BottomNavScaffold extends StatelessWidget {
 
   const BottomNavScaffold({super.key, required this.child});
 
+  Future<bool> _confirmExit(BuildContext context) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('تأكيد الخروج'),
+        content: const Text('هل تريد الخروج من التطبيق؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('خروج'),
+          ),
+        ],
+      ),
+    );
+    return result == true;
+  }
+
   int _indexForLocation(String location) {
+    if (location == '/home' || location.startsWith('/home')) return 0;
     if (location.startsWith('/flights')) return 1;
     if (location.startsWith('/hotels')) return 2;
     if (location.startsWith('/bus')) return 3;
     if (location.startsWith('/favorites')) return 4;
+    if (location.startsWith('/profile') || location.startsWith('/settings')) {
+      return 5;
+    }
     return 0;
   }
 
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: BottomNav(currentIndex: _indexForLocation(location)),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final router = GoRouter.of(context);
+        if (router.canPop()) {
+          context.pop();
+          return;
+        }
+        final shouldExit = await _confirmExit(context);
+        if (shouldExit) {
+          await SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        body: child,
+        bottomNavigationBar: BottomNav(currentIndex: _indexForLocation(location)),
+      ),
     );
   }
 }
-
 
 class _BottomNavItem {
   final String label;
   final IconData icon;
   final String route;
 
-  const _BottomNavItem({required this.label, required this.icon, required this.route});
-}
-
-class _AdvancedBottomNavBar extends StatelessWidget {
-  final List<_BottomNavItem> items;
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-  final Map<int, int> badges;
-
-  const _AdvancedBottomNavBar({
-    required this.items,
-    required this.currentIndex,
-    required this.onTap,
-    required this.badges,
+  const _BottomNavItem({
+    required this.label,
+    required this.icon,
+    required this.route,
   });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return SafeArea(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final itemWidth = constraints.maxWidth / items.length;
-            return Stack(
-              alignment: Alignment.bottomCenter,
-              children: [
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  left: (itemWidth * currentIndex) + (itemWidth - 30) / 2,
-                  bottom: 4,
-                  child: Container(
-                    width: 30,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(items.length, (index) {
-                    final item = items[index];
-                    final selected = index == currentIndex;
-                    return Expanded(
-                      child: InkWell(
-                        onTap: () => onTap(index),
-                        borderRadius: BorderRadius.circular(18),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  Icon(
-                                    item.icon,
-                                    size: 26,
-                                    color: selected ? colorScheme.primary : colorScheme.onSurface.withOpacity(0.6),
-                                  ),
-                                  if (badges.containsKey(index) && (badges[index] ?? 0) > 0)
-                                    Positioned(
-                                      right: -8,
-                                      top: -6,
-                                      child: _Badge(count: badges[index] ?? 0),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item.label,
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                      color: selected
-                                          ? colorScheme.primary
-                                          : colorScheme.onSurface.withOpacity(0.6),
-                                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final int count;
-
-  const _Badge({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    final display = count > 99 ? '99+' : count.toString();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.redAccent,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        display,
-        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
-      ),
-    );
-  }
 }

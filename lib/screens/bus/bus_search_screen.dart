@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../logic/bus_booking_controller.dart';
+import '../../logic/location_service.dart';
 import '../../models/bus_model.dart';
 import '../../widgets/branded_app_bar.dart';
 import '../../widgets/responsive_container.dart';
@@ -16,6 +17,7 @@ class BusSearchScreen extends StatefulWidget {
 class _BusSearchScreenState extends State<BusSearchScreen> {
   late GlobalKey<FormState> _formKey;
   late TextEditingController _passengersController;
+  late TextEditingController _dateController;
   String? _fromCity;
   String? _toCity;
   DateTime? _travelDate;
@@ -25,11 +27,13 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
     super.initState();
     _formKey = GlobalKey<FormState>();
     _passengersController = TextEditingController(text: '1');
+    _dateController = TextEditingController();
   }
 
   @override
   void dispose() {
     _passengersController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
@@ -43,7 +47,10 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
       locale: const Locale('ar'),
     );
     if (picked != null && mounted) {
-      setState(() => _travelDate = picked);
+      setState(() {
+        _travelDate = picked;
+        _dateController.text = _formatDate(picked);
+      });
     }
   }
 
@@ -75,9 +82,16 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
       return;
     }
 
+    final fromCity = _fromCity?.trim().isEmpty ?? true
+        ? BusConstants.saudiCities.first
+        : _fromCity!.trim();
+    final toCity = _toCity?.trim().isEmpty ?? true
+        ? BusConstants.saudiCities[1]
+        : _toCity!.trim();
+
     final request = BusSearchRequest(
-      fromCity: _fromCity!,
-      toCity: _toCity!,
+      fromCity: fromCity,
+      toCity: toCity,
       date: _travelDate!,
       passengerCount: int.tryParse(_passengersController.text) ?? 1,
       selectedCompanyId: selectedCompany.id,
@@ -118,7 +132,7 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
                   // Selected Company Card
                   if (selectedCompany != null)
                     Card(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Row(
@@ -127,7 +141,7 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
                               width: 48,
                               height: 48,
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Center(
@@ -167,16 +181,16 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
                   const SizedBox(height: 20),
 
                   // From City
-                  _buildCityDropdown(
-                    label: 'من المدينة',
+                  _buildLocationAutocomplete(
+                    label: 'من المدينة (اختياري)',
                     value: _fromCity,
                     onChanged: (value) => setState(() => _fromCity = value),
                   ),
                   const SizedBox(height: 16),
 
                   // To City
-                  _buildCityDropdown(
-                    label: 'إلى المدينة',
+                  _buildLocationAutocomplete(
+                    label: 'إلى المدينة (اختياري)',
                     value: _toCity,
                     onChanged: (value) => setState(() => _toCity = value),
                   ),
@@ -201,9 +215,7 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
                       }
                       return null;
                     },
-                    controller: TextEditingController(
-                      text: _travelDate != null ? _formatDate(_travelDate!) : '',
-                    ),
+                    controller: _dateController,
                   ),
                   const SizedBox(height: 16),
 
@@ -265,39 +277,37 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
     );
   }
 
-  Widget _buildCityDropdown({
+  Widget _buildLocationAutocomplete({
     required String label,
     required String? value,
     required ValueChanged<String?> onChanged,
   }) {
-    final allCities = [
-      ...BusConstants.saudiCities,
-      ...BusConstants.yemenCities,
-    ];
+    final locations = context.watch<LocationService>().locations;
+    final options = locations.map((e) => e.name).toList();
 
-    return DropdownButtonFormField<String>(
-      value: value,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: const Icon(Icons.location_on),
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-        ),
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surface,
-      ),
-      items: allCities.map((city) {
-        return DropdownMenuItem<String>(
-          value: city,
-          child: Text(city),
+    return Autocomplete<String>(
+      initialValue: TextEditingValue(text: value ?? ''),
+      optionsBuilder: (text) {
+        final query = text.text.trim();
+        if (query.isEmpty) return options;
+        return options.where((item) => item.contains(query));
+      },
+      onSelected: (selection) => onChanged(selection),
+      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+        return TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          decoration: InputDecoration(
+            labelText: label,
+            prefixIcon: const Icon(Icons.location_on),
+            border: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            filled: true,
+            fillColor: Theme.of(context).colorScheme.surface,
+          ),
+          onChanged: (value) => onChanged(value.trim().isEmpty ? null : value),
         );
-      }).toList(),
-      onChanged: onChanged,
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'اختر $label';
-        }
-        return null;
       },
     );
   }

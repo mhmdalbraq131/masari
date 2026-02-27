@@ -1,0 +1,36 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "flutter: run (device)",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"run",
+				"-d",
+				"R3CN40B6Y4X"
+			]
+		},
+		{
+			"label": "flutter: run (device)",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"run",
+				"-d",
+				"R3CN40B6Y4X"
+			]
+		},
+		{
+			"label": "flutter: run (device, verbose)",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"run",
+				"-d",
+				"R3CN40B6Y4X",
+				"--verbose"
+			]
+		}
+	]
+}

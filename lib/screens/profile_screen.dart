@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../auth/auth_service.dart';
+import '../l10n/app_localizations.dart';
 import '../widgets/branded_app_bar.dart';
 import '../widgets/responsive_container.dart';
 
@@ -16,11 +17,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _name = 'محمد أحمد';
   String _email = 'mohammed@email.com';
   String _phone = '05xxxxxxxx';
-  bool _biometric = true;
-  bool _twoFactor = false;
-  bool _loginAlerts = true;
-  String _language = 'العربية';
-  String _theme = 'داكن';
 
   void _openEditProfile() {
     final nameController = TextEditingController(text: _name);
@@ -40,13 +36,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('تعديل البيانات', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'تعديل البيانات',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'الاسم')),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'الاسم'),
+            ),
             const SizedBox(height: 10),
-            TextField(controller: emailController, decoration: const InputDecoration(labelText: 'البريد الإلكتروني')),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
+            ),
             const SizedBox(height: 10),
-            TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'رقم الهاتف')),
+            TextField(
+              controller: phoneController,
+              decoration: const InputDecoration(labelText: 'رقم الهاتف'),
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
@@ -90,33 +98,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const BrandedAppBar(title: 'الملف الشخصي'),
+      appBar: BrandedAppBar(title: t.profileTitle),
       body: ResponsiveContainer(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: _openAvatarPicker,
+                      child: const CircleAvatar(
+                        radius: 28,
+                        child: Icon(Icons.person),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_name, style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: 4),
+                          Text(_email, style: Theme.of(context).textTheme.bodySmall),
+                          const SizedBox(height: 4),
+                          Text(_phone, style: Theme.of(context).textTheme.bodySmall),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: _openEditProfile,
+                      child: Text(t.editProfile),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
               child: Column(
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.person_outline),
-                    title: const Text('الملف الشخصي'),
-                    subtitle: const Text('عرض وتعديل بيانات الحساب'),
-                    onTap: _openEditProfile,
-                  ),
-                  const Divider(height: 0),
-                  ListTile(
                     leading: const Icon(Icons.airplane_ticket_outlined),
-                    title: const Text('رحلاتي'),
-                    subtitle: const Text('عرض الحجوزات الحالية والسابقة'),
+                    title: Text(t.myTripsLabel),
+                    subtitle: Text(t.myTripsSubtitle),
                     onTap: () => context.go('/mytrips'),
                   ),
                   const Divider(height: 0),
                   ListTile(
+                    leading: const Icon(Icons.insert_chart_outlined),
+                    title: Text(t.reportsLabel),
+                    subtitle: Text(t.reportsSubtitle),
+                    onTap: () => context.go('/reports'),
+                  ),
+                  const Divider(height: 0),
+                  ListTile(
+                    leading: const Icon(Icons.notifications_none),
+                    title: const Text('الإشعارات'),
+                    subtitle: const Text('اطلاع على آخر التنبيهات'),
+                    onTap: () => context.go('/notifications'),
+                  ),
+                  const Divider(height: 0),
+                  ListTile(
+                    leading: const Icon(Icons.mosque_outlined),
+                    title: const Text('طلباتي للحج والعمرة'),
+                    subtitle: const Text('متابعة حالة الطلبات والتفاصيل'),
+                    onTap: () => context.go('/hajj-umrah/my-applications'),
+                  ),
+                  const Divider(height: 0),
+                  ListTile(
                     leading: const Icon(Icons.settings_outlined),
-                    title: const Text('الإعدادات'),
-                    subtitle: const Text('إعدادات التطبيق والتفضيلات'),
+                    title: Text(t.settingsLabel),
+                    subtitle: Text(t.settingsSubtitle),
                     onTap: () => context.go('/settings'),
                   ),
                 ],
@@ -124,96 +181,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 16),
             Card(
-              child: ListTile(
-                leading: GestureDetector(
-                  onTap: _openAvatarPicker,
-                  child: const CircleAvatar(
-                    radius: 24,
-                    child: Icon(Icons.person),
-                  ),
-                ),
-                title: Text(_name),
-                subtitle: Text(_email),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: _openEditProfile,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _SectionHeader(title: 'إعدادات الأمان'),
-            const SizedBox(height: 8),
-            Card(
-              child: Column(
-                children: [
-                  SwitchListTile(
-                    title: const Text('تسجيل الدخول بالبصمة'),
-                    value: _biometric,
-                    onChanged: (v) => setState(() => _biometric = v),
-                  ),
-                  const Divider(height: 0),
-                  SwitchListTile(
-                    title: const Text('المصادقة الثنائية'),
-                    value: _twoFactor,
-                    onChanged: (v) => setState(() => _twoFactor = v),
-                  ),
-                  const Divider(height: 0),
-                  SwitchListTile(
-                    title: const Text('تنبيهات تسجيل الدخول'),
-                    value: _loginAlerts,
-                    onChanged: (v) => setState(() => _loginAlerts = v),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _SectionHeader(title: 'اللغة والمظهر'),
-            const SizedBox(height: 8),
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    title: const Text('اللغة'),
-                    trailing: DropdownButton<String>(
-                      value: _language,
-                      onChanged: (value) => setState(() => _language = value ?? _language),
-                      items: const [
-                        DropdownMenuItem(value: 'العربية', child: Text('العربية')),
-                        DropdownMenuItem(value: 'English', child: Text('English')),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 0),
-                  ListTile(
-                    title: const Text('المظهر'),
-                    trailing: DropdownButton<String>(
-                      value: _theme,
-                      onChanged: (value) => setState(() => _theme = value ?? _theme),
-                      items: const [
-                        DropdownMenuItem(value: 'داكن', child: Text('داكن')),
-                        DropdownMenuItem(value: 'فاتح', child: Text('فاتح')),
-                        DropdownMenuItem(value: 'النظام', child: Text('النظام')),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _SectionHeader(title: 'بيانات التواصل'),
-            const SizedBox(height: 8),
-            Card(
               child: Column(
                 children: [
                   ListTile(
                     leading: const Icon(Icons.phone),
-                    title: const Text('الهاتف'),
+                    title: Text(t.phoneLabel),
                     subtitle: Text(_phone),
                   ),
                   const Divider(height: 0),
                   ListTile(
                     leading: const Icon(Icons.mail_outline),
-                    title: const Text('البريد الإلكتروني'),
+                    title: Text(t.emailLabel),
                     subtitle: Text(_email),
                   ),
                 ],
@@ -223,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Card(
               child: ListTile(
                 leading: const Icon(Icons.logout),
-                title: const Text('تسجيل الخروج'),
+                title: Text(t.logoutLabel),
                 onTap: () async {
                   await context.read<AuthService>().logout();
                   if (!context.mounted) return;
@@ -234,19 +212,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
     );
   }
 }

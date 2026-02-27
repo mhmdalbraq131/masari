@@ -23,15 +23,34 @@ class _BusResultsScreenState extends State<BusResultsScreen> {
     super.initState();
     final controller = context.read<BusBookingController>();
     final prices = controller.searchResults.map((e) => e.priceSAR).toList();
-    final min = prices.isEmpty ? 0.0 : prices.reduce((a, b) => a < b ? a : b);
-    final max = prices.isEmpty ? 0.0 : prices.reduce((a, b) => a > b ? a : b);
+    final bounds = _priceBounds(prices);
+    final min = bounds.start;
+    final max = bounds.end;
     _priceRange = RangeValues(min, max);
   }
 
-  List<BusTrip> get _filteredAndSortedResults {
+  RangeValues _priceBounds(List<double> prices) {
+    if (prices.isEmpty) return const RangeValues(0, 1);
+    final min = prices.reduce((a, b) => a < b ? a : b);
+    var max = prices.reduce((a, b) => a > b ? a : b);
+    if (min == max) max = min + 1;
+    return RangeValues(min, max);
+  }
+
+  RangeValues _effectiveRange(List<double> prices) {
+    final bounds = _priceBounds(prices);
+    final min = bounds.start;
+    final max = bounds.end;
+    final start = _priceRange.start.clamp(min, max).toDouble();
+    final end = _priceRange.end.clamp(min, max).toDouble();
+    if (start == end) return RangeValues(start, max);
+    return RangeValues(start, end);
+  }
+
+  List<BusTrip> _filteredAndSortedResults(RangeValues range) {
     final controller = context.read<BusBookingController>();
     final filtered = controller.searchResults.where((trip) {
-      return trip.priceSAR >= _priceRange.start && trip.priceSAR <= _priceRange.end;
+      return trip.priceSAR >= range.start && trip.priceSAR <= range.end;
     }).toList();
 
     filtered.sort((a, b) {
@@ -62,6 +81,9 @@ class _BusResultsScreenState extends State<BusResultsScreen> {
       appBar: const BrandedAppBar(title: 'الرحلات المتاحة'),
       body: Consumer<BusBookingController>(
         builder: (context, controller, _) {
+          final prices = controller.searchResults.map((e) => e.priceSAR).toList();
+          final bounds = _priceBounds(prices);
+          final range = _effectiveRange(prices);
           if (controller.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -74,7 +96,7 @@ class _BusResultsScreenState extends State<BusResultsScreen> {
                   Icon(
                     Icons.directions_bus_filled_outlined,
                     size: 48,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -92,7 +114,7 @@ class _BusResultsScreenState extends State<BusResultsScreen> {
             );
           }
 
-          final results = _filteredAndSortedResults;
+          final results = _filteredAndSortedResults(range);
 
           return ResponsiveContainer(
             child: ListView(
@@ -114,17 +136,13 @@ class _BusResultsScreenState extends State<BusResultsScreen> {
                         ),
                         const SizedBox(height: 8),
                         RangeSlider(
-                          values: _priceRange,
-                          min: controller.searchResults
-                              .map((e) => e.priceSAR)
-                              .reduce((a, b) => a < b ? a : b),
-                          max: controller.searchResults
-                              .map((e) => e.priceSAR)
-                              .reduce((a, b) => a > b ? a : b),
+                          values: range,
+                          min: bounds.start,
+                          max: bounds.end,
                           divisions: 10,
                           labels: RangeLabels(
-                            _priceRange.start.toStringAsFixed(0),
-                            _priceRange.end.toStringAsFixed(0),
+                            range.start.toStringAsFixed(0),
+                            range.end.toStringAsFixed(0),
                           ),
                           onChanged: (values) {
                             setState(() => _priceRange = values);
@@ -440,7 +458,7 @@ class _BusTripCard extends StatelessWidget {
                             label: Text(amenity),
                             labelPadding: const EdgeInsets.symmetric(horizontal: 4),
                             backgroundColor:
-                                Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                              Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                           ))
                       .toList(),
                 ),

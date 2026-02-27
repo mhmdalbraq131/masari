@@ -29,6 +29,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<_QuickAction> _quickActions = const [
     _QuickAction(label: 'رحلاتي', icon: Icons.confirmation_number_outlined, route: '/mytrips'),
     _QuickAction(label: 'احجز الآن', icon: Icons.calendar_month_outlined, route: '/booking'),
+    _QuickAction(label: 'الحج والعمرة', icon: Icons.mosque_outlined, route: '/hajj-umrah'),
+    _QuickAction(label: 'الإشعارات', icon: Icons.notifications_none, route: '/notifications'),
     _QuickAction(label: 'المفضلة', icon: Icons.favorite_border, route: '/favorites'),
     _QuickAction(label: 'الملف الشخصي', icon: Icons.person_outline, route: '/profile'),
   ];
@@ -92,26 +94,29 @@ class _HomeScreenState extends State<HomeScreen> {
       _ServiceCardData(title: 'الطيران', icon: Icons.flight, route: '/flights'),
       _ServiceCardData(title: 'الفنادق', icon: Icons.hotel, route: '/hotels'),
       _ServiceCardData(title: 'الباصات', icon: Icons.directions_bus, route: '/bus-companies'),
+      _ServiceCardData(title: 'الحج والعمرة', icon: Icons.mosque_outlined, route: '/hajj-umrah'),
     ];
 
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (!didPop) {
-          SystemNavigator.pop();
-        }
-      },
-      child: Scaffold(
-        appBar: const BrandedAppBar(title: 'الرئيسية'),
-        body: SafeArea(
-          child: ResponsiveContainer(
-            child: RefreshIndicator(
-              onRefresh: _onRefresh,
-              child: _loading
-                  ? const _HomeSkeleton()
-                  : ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
+    return Scaffold(
+      appBar: BrandedAppBar(
+        title: 'الرئيسية',
+        actions: [
+          IconButton(
+            tooltip: 'الملف الشخصي',
+            icon: const Icon(Icons.person_outline),
+            onPressed: () => context.go('/profile'),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: ResponsiveContainer(
+          child: RefreshIndicator(
+            onRefresh: _onRefresh,
+            child: _loading
+                ? const _HomeSkeleton()
+                : ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
                       _PersonalGreeting(
                         title: 'مرحبًا أحمد 👋',
                         subtitle: 'ابدأ التخطيط لرحلتك القادمة بسهولة.',
@@ -143,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: _quickActions.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 10),
+                          separatorBuilder: (_, _) => const SizedBox(width: 10),
                           itemBuilder: (context, index) {
                             final item = _quickActions[index];
                             return _QuickActionButton(
@@ -162,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: _destinations.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 12),
+                          separatorBuilder: (_, _) => const SizedBox(width: 12),
                           itemBuilder: (context, index) {
                             final item = _destinations[index];
                             return _DestinationCard(
@@ -208,9 +213,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           );
                         },
                       ),
-                      ],
-                    ),
-            ),
+                    ],
+                  ),
           ),
         ),
       ),
@@ -301,15 +305,18 @@ class _ImageSlider extends StatelessWidget {
                     CachedNetworkImage(
                       imageUrl: images[index],
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: Colors.white10),
-                      errorWidget: (_, __, ___) => const Icon(Icons.broken_image_outlined),
+                      placeholder: (_, _) => Container(color: Colors.white10),
+                      errorWidget: (_, _, _) => const Icon(Icons.broken_image_outlined),
                     ),
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
-                          colors: [Colors.black.withOpacity(0.55), Colors.transparent],
+                          colors: [
+                            Colors.black.withValues(alpha: 0.55),
+                            Colors.transparent,
+                          ],
                         ),
                       ),
                     ),
@@ -337,7 +344,8 @@ class _ImageSlider extends StatelessWidget {
               decoration: BoxDecoration(
                 color: currentIndex == index
                     ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    : Theme.of(context).colorScheme.primary
+                      .withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
@@ -468,11 +476,15 @@ class _DestinationCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
-                child: CachedNetworkImage(
-                  imageUrl: item.imageUrl,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(color: Colors.white10),
-                  errorWidget: (_, __, ___) => const Icon(Icons.broken_image_outlined),
+                child: Hero(
+                  tag: 'trip-${item.title}',
+                  child: CachedNetworkImage(
+                    imageUrl: item.imageUrl,
+                    fit: BoxFit.cover,
+                    placeholder: (_, _) => Container(color: Colors.white10),
+                    errorWidget: (_, _, _) =>
+                        const Icon(Icons.broken_image_outlined),
+                  ),
                 ),
               ),
               Padding(
@@ -592,8 +604,8 @@ class _HomeSkeleton extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: 4,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (_, __) => _shimmerBox(width: 120, height: 84),
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
+            itemBuilder: (_, _) => _shimmerBox(width: 120, height: 84),
           ),
         ),
         const SizedBox(height: 16),
@@ -602,8 +614,8 @@ class _HomeSkeleton extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: 3,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (_, __) => _shimmerBox(width: 170, height: 210),
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            itemBuilder: (_, _) => _shimmerBox(width: 170, height: 210),
           ),
         ),
         const SizedBox(height: 16),
@@ -617,7 +629,7 @@ class _HomeSkeleton extends StatelessWidget {
             childAspectRatio: 1.1,
           ),
           itemCount: 4,
-          itemBuilder: (_, __) => _shimmerBox(height: 140),
+          itemBuilder: (_, _) => _shimmerBox(height: 140),
         ),
       ],
     );

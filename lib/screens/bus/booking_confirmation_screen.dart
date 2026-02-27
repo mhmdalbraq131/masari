@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../data/models/booking_record.dart';
+import '../../logic/app_state.dart';
 import '../../logic/bus_booking_controller.dart';
 import '../../widgets/branded_app_bar.dart';
 import '../../widgets/responsive_container.dart';
@@ -18,6 +20,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
   late final AnimationController _controller;
   late final Animation<double> _scale;
   late final Animation<double> _fade;
+  bool _recorded = false;
 
   @override
   void initState() {
@@ -27,13 +30,15 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
       duration: const Duration(milliseconds: 800),
     )..forward();
 
-    _scale = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    _scale = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
-    _fade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
+    _fade = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
   }
 
   @override
@@ -58,6 +63,23 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
       body: Consumer<BusBookingController>(
         builder: (context, controller, _) {
           final booking = controller.currentBooking;
+
+          if (booking != null && !_recorded) {
+            _recorded = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              context.read<AppState>().addBusBooking(
+                BookingRecord(
+                  ticketId: booking.id,
+                  company: booking.trip.company,
+                  date: booking.bookingDate,
+                  status: booking.status,
+                  amountSar: booking.trip.priceSAR,
+                  userName: booking.passenger.fullName,
+                ),
+              );
+            });
+          }
 
           if (booking == null) {
             return Center(
@@ -99,7 +121,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                             height: 100,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.green.withOpacity(0.1),
+                              color: Colors.green.withValues(alpha: 0.1),
                             ),
                             child: const Center(
                               child: Icon(
@@ -115,9 +137,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.headlineSmall
                                 ?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: Colors.green,
-                            ),
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.green,
+                                ),
                           ),
                         ],
                       ),
@@ -126,8 +148,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
 
                     // Confirmation Number
                     Card(
-                      color: Theme.of(context).colorScheme.primary
-                          .withOpacity(0.05),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.05),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -135,9 +158,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                             Text(
                               'رقم التأكيد',
                               style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                                  ?.copyWith(color: Colors.grey[600]),
                             ),
                             const SizedBox(height: 8),
                             SelectableText(
@@ -145,19 +166,18 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                               textAlign: TextAlign.center,
                               style: Theme.of(context).textTheme.titleLarge
                                   ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color:
-                                    Theme.of(context).colorScheme.primary,
-                                letterSpacing: 1.5,
-                              ),
+                                    fontWeight: FontWeight.w700,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    letterSpacing: 1.5,
+                                  ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'احفظ هذا الرقم للمراجعة',
                               style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                                  ?.copyWith(color: Colors.grey[600]),
                             ),
                           ],
                         ),
@@ -175,9 +195,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                             Text(
                               'تفاصيل الرحلة',
                               style: Theme.of(context).textTheme.titleSmall
-                                  ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                                  ?.copyWith(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 12),
                             const Divider(height: 1),
@@ -227,9 +245,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                             Text(
                               'بيانات الراكب',
                               style: Theme.of(context).textTheme.titleSmall
-                                  ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                                  ?.copyWith(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 12),
                             const Divider(height: 1),
@@ -265,8 +281,9 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
 
                     // Total Price
                     Card(
-                      color: Theme.of(context).colorScheme.primary
-                          .withOpacity(0.05),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.05),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -275,9 +292,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                             Text(
                               'السعر الإجمالي',
                               style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                                  ?.copyWith(color: Colors.grey[600]),
                             ),
                             const SizedBox(height: 8),
                             Row(
@@ -292,23 +307,20 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                                           .titleMedium
                                           ?.copyWith(
                                             fontWeight: FontWeight.w700,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
                                           ),
                                     ),
                                     Text(
                                       'ريال سعودي',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelSmall,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelSmall,
                                     ),
                                   ],
                                 ),
-                                const Divider(
-                                  height: 50,
-                                  indent: 10,
-                                ),
+                                const Divider(height: 50, indent: 10),
                                 Column(
                                   children: [
                                     Text(
@@ -318,16 +330,16 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                                           .titleMedium
                                           ?.copyWith(
                                             fontWeight: FontWeight.w700,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
                                           ),
                                     ),
                                     Text(
                                       'ريال يمني',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelSmall,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelSmall,
                                     ),
                                   ],
                                 ),
@@ -346,8 +358,7 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
                       label: const Text('حجز رحلة أخرى'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        backgroundColor:
-                            Theme.of(context).colorScheme.primary,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -375,15 +386,15 @@ class _BookingConfirmationScreenState extends State<BookingConfirmationScreen>
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
         ),
         Text(
           value,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
           textAlign: TextAlign.start,
         ),
       ],

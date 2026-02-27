@@ -24,7 +24,7 @@ class TripsScreen extends StatelessWidget {
               : ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: trips.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final trip = trips[index];
                     return Card(
@@ -52,8 +52,10 @@ class TripsScreen extends StatelessWidget {
                                   width: 90,
                                   height: 80,
                                   fit: BoxFit.cover,
-                                  placeholder: (_, __) => Container(color: Colors.white10),
-                                  errorWidget: (_, __, ___) => const Icon(Icons.broken_image_outlined),
+                                  placeholder: (context, url) =>
+                                      Container(color: Colors.white10),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.broken_image_outlined),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -139,7 +141,7 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(

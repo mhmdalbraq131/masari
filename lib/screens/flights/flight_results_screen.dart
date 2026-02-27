@@ -17,25 +17,40 @@ class FlightResultsScreen extends StatefulWidget {
 
 class _FlightResultsScreenState extends State<FlightResultsScreen> {
   FlightSort _sort = FlightSort.price;
+  late List<FlightOption> _sortedResults;
 
-  List<FlightOption> get _sorted {
+  @override
+  void initState() {
+    super.initState();
+    _computeSorted();
+  }
+
+  @override
+  void didUpdateWidget(covariant FlightResultsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.results != widget.results) {
+      _computeSorted();
+    }
+  }
+
+  void _computeSorted() {
     final items = [...widget.results];
     if (_sort == FlightSort.price) {
       items.sort((a, b) => a.priceSAR.compareTo(b.priceSAR));
     } else {
       items.sort((a, b) => a.departTime.compareTo(b.departTime));
     }
-    return items;
+    _sortedResults = items;
   }
 
   String _durationLabel(int minutes) {
     final h = minutes ~/ 60;
     final m = minutes % 60;
-    return '${h}س ${m}د';
+    return '$hس $mد';
   }
 
   String _stopLabel(int stops) {
-    return stops == 0 ? 'مباشر' : 'توقف ${stops}';
+    return stops == 0 ? 'مباشر' : 'توقف $stops';
   }
 
   @override
@@ -46,28 +61,45 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
         child: ResponsiveContainer(
           child: widget.results.isEmpty
               ? _EmptyState(from: widget.criteria.fromCity, to: widget.criteria.toCity)
-              : ListView(
+              : ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  children: [
-                    _Header(
-                      from: widget.criteria.fromCity,
-                      to: widget.criteria.toCity,
-                      passengers: widget.criteria.passengers,
-                      travelClass: widget.criteria.travelClass,
-                    ),
-                    const SizedBox(height: 12),
-                    _SortBar(
-                      value: _sort,
-                      onChanged: (value) => setState(() => _sort = value),
-                    ),
-                    const SizedBox(height: 12),
-                    ..._sorted.map((flight) => _FlightCard(
+                  itemCount: 4 + _sortedResults.length,
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return _Header(
+                        from: widget.criteria.fromCity,
+                        to: widget.criteria.toCity,
+                        passengers: widget.criteria.passengers,
+                        travelClass: widget.criteria.travelClass,
+                      );
+                    }
+                    if (index == 1) return const SizedBox(height: 12);
+                    if (index == 2) {
+                      return _SortBar(
+                        value: _sort,
+                        onChanged: (value) => setState(() {
+                          _sort = value;
+                          _computeSorted();
+                        }),
+                      );
+                    }
+                    if (index == 3) return const SizedBox(height: 12);
+
+                    final flight = _sortedResults[index - 4];
+                    return _FlightCard(
+                      flight: flight,
+                      durationLabel: _durationLabel(flight.durationMinutes),
+                      stopLabel: _stopLabel(flight.stops),
+                      canBook: flight.seatsAvailable >= widget.criteria.passengers,
+                      onSelect: () => context.push(
+                        '/flight-passengers',
+                        extra: FlightSelection(
+                          criteria: widget.criteria,
                           flight: flight,
-                          durationLabel: _durationLabel(flight.durationMinutes),
-                          stopLabel: _stopLabel(flight.stops),
-                          onSelect: () => context.push('/flight-passengers', extra: flight),
-                        )),
-                  ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
         ),
       ),
@@ -145,7 +177,7 @@ class _SortBar extends StatelessWidget {
             label: const Text('السعر'),
             selected: value == FlightSort.price,
             onSelected: (_) => onChanged(FlightSort.price),
-            selectedColor: AppColors.primary.withOpacity(0.2),
+            selectedColor: AppColors.primary.withValues(alpha: 0.2),
             labelStyle: TextStyle(
               color: value == FlightSort.price ? AppColors.textPrimary : AppColors.textSecondary,
             ),
@@ -155,7 +187,7 @@ class _SortBar extends StatelessWidget {
             label: const Text('الوقت'),
             selected: value == FlightSort.time,
             onSelected: (_) => onChanged(FlightSort.time),
-            selectedColor: AppColors.primary.withOpacity(0.2),
+            selectedColor: AppColors.primary.withValues(alpha: 0.2),
             labelStyle: TextStyle(
               color: value == FlightSort.time ? AppColors.textPrimary : AppColors.textSecondary,
             ),
@@ -171,12 +203,14 @@ class _FlightCard extends StatelessWidget {
   final String durationLabel;
   final String stopLabel;
   final VoidCallback onSelect;
+  final bool canBook;
 
   const _FlightCard({
     required this.flight,
     required this.durationLabel,
     required this.stopLabel,
     required this.onSelect,
+    required this.canBook,
   });
 
   @override
@@ -212,6 +246,14 @@ class _FlightCard extends StatelessWidget {
                   child: Text('المقاعد المتاحة: ${flight.seatsAvailable}',
                       style: Theme.of(context).textTheme.bodySmall),
                 ),
+                if (!canBook)
+                  Text(
+                    'غير متاح',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: Colors.redAccent),
+                  ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -227,7 +269,7 @@ class _FlightCard extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: ElevatedButton(
-                onPressed: onSelect,
+                onPressed: canBook ? onSelect : null,
                 child: const Text('اختيار الرحلة'),
               ),
             ),
@@ -267,7 +309,7 @@ class _Tag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(label, style: Theme.of(context).textTheme.bodySmall),

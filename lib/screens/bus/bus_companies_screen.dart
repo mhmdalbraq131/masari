@@ -72,7 +72,7 @@ class _BusCompaniesScreenState extends State<BusCompaniesScreen> {
                     Icon(
                       Icons.directions_bus_filled_outlined,
                       size: 48,
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -139,7 +139,7 @@ class _CompanyCard extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(

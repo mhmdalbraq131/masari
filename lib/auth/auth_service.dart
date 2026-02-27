@@ -20,6 +20,10 @@ class AuthService extends ChangeNotifier {
   UserRole get role => _currentUser?.role ?? UserRole.guest;
   String? get username => _currentUser?.username;
 
+  Future<bool> hasAdminUser() async {
+    return _db.hasUserWithRole(UserRole.admin.name);
+  }
+
   Future<void> restoreSession() async {
     if (_restored) return;
     _restored = true;
@@ -128,11 +132,30 @@ class AuthService extends ChangeNotifier {
 
   AuthUser _rowToUser(Map<String, Object?> row) {
     final roleValue = row['role'] as String;
-    final role = roleValue == 'admin' ? UserRole.admin : UserRole.user;
+    final role = _roleFromString(roleValue);
     return AuthUser(
       id: row['id'] as int,
       username: row['username'] as String,
       role: role,
     );
+  }
+
+  UserRole _roleFromString(String value) {
+    switch (value) {
+      case 'admin':
+        return UserRole.admin;
+      case 'subAdmin':
+        return UserRole.subAdmin;
+      case 'bookingAgent':
+        return UserRole.bookingAgent;
+      case 'visaOfficer':
+        return UserRole.visaOfficer;
+      case 'supervisor':
+        return UserRole.supervisor;
+      case 'guest':
+        return UserRole.guest;
+      default:
+        return UserRole.user;
+    }
   }
 }

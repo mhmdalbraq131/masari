@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../auth/auth_service.dart';
 import '../../data/models/admin_company.dart';
 import '../../logic/admin_data_state.dart';
+import '../../services/audit_log_service.dart';
 import '../../widgets/branded_app_bar.dart';
 import '../../widgets/responsive_container.dart';
 
@@ -38,6 +40,14 @@ class _ManageCompaniesScreenState extends State<ManageCompaniesScreen> {
   void _deleteCompany(int index) {
     final id = context.read<AdminDataState>().companies[index].id;
     context.read<AdminDataState>().deleteCompany(id);
+    final actor = context.read<AuthService>().username ?? 'غير معروف';
+    context.read<AuditLogService>().log(
+          actor: actor,
+          action: 'حذف شركة',
+          targetType: 'company',
+          targetId: id,
+          details: 'تم حذف الشركة',
+        );
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('تم حذف الشركة')),
     );
@@ -115,6 +125,14 @@ class _ManageCompaniesScreenState extends State<ManageCompaniesScreen> {
                           logoPath: logo?.path,
                         ),
                       );
+                  final actor = context.read<AuthService>().username ?? 'غير معروف';
+                  context.read<AuditLogService>().log(
+                        actor: actor,
+                        action: 'إضافة شركة',
+                        targetType: 'company',
+                        targetId: name,
+                        details: 'شركة جديدة',
+                      );
                 } else {
                   context.read<AdminDataState>().updateCompany(
                         existing!.id,
@@ -123,6 +141,14 @@ class _ManageCompaniesScreenState extends State<ManageCompaniesScreen> {
                           description: desc,
                           logoPath: logo?.path,
                         ),
+                      );
+                  final actor = context.read<AuthService>().username ?? 'غير معروف';
+                  context.read<AuditLogService>().log(
+                        actor: actor,
+                        action: 'تعديل شركة',
+                        targetType: 'company',
+                        targetId: existing.id,
+                        details: 'تعديل بيانات الشركة',
                       );
                 }
               });
@@ -148,7 +174,7 @@ class _ManageCompaniesScreenState extends State<ManageCompaniesScreen> {
         child: ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: context.watch<AdminDataState>().companies.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final company = context.watch<AdminDataState>().companies[index];
             return Card(

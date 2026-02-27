@@ -74,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     'assets/logo/masari_logo.png',
                     height: 140,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const Icon(Icons.flight_takeoff, size: 120, color: Colors.white),
+                    errorBuilder: (_, _, _) => const Icon(Icons.flight_takeoff, size: 120, color: Colors.white),
                   ),
                   const SizedBox(height: 12),
                   const Text(

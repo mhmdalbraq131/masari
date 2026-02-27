@@ -1,0 +1,14 @@
+﻿lib\core\theme\app_theme.dart
+lib\routes\app_router.dart
+lib\screens\admin\manage_bookings.dart
+lib\screens\admin\manage_companies.dart
+lib\screens\admin\manage_prices.dart
+lib\screens\admin\manage_trips.dart
+lib\screens\admin\manage_users.dart
+lib\screens\auth\login_screen.dart
+lib\screens\bus\bus_passenger_screen.dart
+lib\screens\details_screen.dart
+lib\screens\favorites_screen.dart
+lib\screens\flights\flight_results_screen.dart
+lib\screens\flights\flight_search_screen.dart
+lib\screens\trips_screen.dart
